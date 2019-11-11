@@ -24,7 +24,7 @@ Before we're able to use the SDK, we'll need some configuration from the Azure p
 
 Creating a new Azure Cosmos DB resource on the Azure portal is really simple. Just select "Azure Cosmos DB account", click "Create" and fill out the form (and make sure to select "Gremlin (graph)")
 
-[![](images/CreateAzureCosmosDbAccount.png)](http://timothelariviere.com/wp-content/uploads/2018/03/CreateAzureCosmosDbAccount.png)
+![](/assets/2018-04-04-f-azure-cosmos-db-using-the-graph-api-with-cosmos-db-driver/CreateAzureCosmosDbAccount.png)
 
 Wait until Azure is done creating the resource.
 
@@ -36,13 +36,25 @@ To use the SDK, we will need the following values :
 - GraphName
 - OfferThroughput
 
-`Endpoint` and `AuthKey` can be found in the `Keys` tab. `Endpoint` is the URI field and `AuthKey` is either the Primary or Secondary Key. [![](images/Keys.png)](http://timothelariviere.com/wp-content/uploads/2018/03/Keys.png)
+`Endpoint` and `AuthKey` can be found in the `Keys` tab. `Endpoint` is the URI field and `AuthKey` is either the Primary or Secondary Key.
+![](/assets/2018-04-04-f-azure-cosmos-db-using-the-graph-api-with-cosmos-db-driver/Keys.png)
 
 For the last 3 parameters, `DatabaseName` will be the name of the database (much like a database server in SQL Server) that will contain the graphs (the real databases). `GraphName` will be the name of our graph, and `OfferThroughput` is an indicator of the level of service you want for your graph (measured in Request Units per second, each request has its own RU cost).
 
-For the sample, we'll go with DatabaseName = "sample-cosmosdb-database", GraphName = "sample-cosmosdb-graph" and OfferThroughput = 400 (the minimum). We'll store those settings in a json file named appsettings.json that our app will read.
+For the sample, we'll go with `DatabaseName = "sample-cosmosdb-database"`, `GraphName = "sample-cosmosdb-graph"` and `OfferThroughput = 400` (the minimum). We'll store those settings in a json file named appsettings.json that our app will read.
 
-_appsettings.json_ \[sourcecode language="javascript"\] { "AzureCosmosDb": { "Endpoint" : "https://\[YOUR-AZURECOSMOSDB-ACCOUNT-NAME\] .documents.azure.com:443/", "AuthKey" : "\[YOUR-PRIMARY-KEY\]", "DatabaseName" : "sample-cosmosdb-database", "GraphName" : "sample-cosmosdb-graph", "OfferThroughput" : 400 } } \[/sourcecode\]
+_appsettings.json_
+```js
+{
+    "AzureCosmosDb": {
+        "Endpoint": "https://[YOUR-AZURECOSMOSDB-ACCOUNT-NAME].documents.azure.com:443/",
+        "AuthKey": "[YOUR-PRIMARY-KEY]",
+        "DatabaseName": "sample-cosmosdb-database",
+        "GraphName": "sample-cosmosdb-graph",
+        "OfferThroughput" : 400
+    }
+}
+```
 
 ### Creating the project
 
@@ -57,7 +69,13 @@ Before going on, we will need a few NuGet packages:
 - [Microsoft.Extensions.Configuration.Json](https://www.nuget.org/packages/Microsoft.Extensions.Configuration.Json): To read our settings file
 - [FSharp.Core](https://www.nuget.org/packages/FSharp.Core): [Because you should always reference it explicitly](https://fsharp.github.io/2015/04/18/fsharp-core-notes.html#always-reference-fsharpcore-via-the-nuget-package)
 
-Add the latest version of each using the NuGet GUI of Visual Studio, or if you prefer command lines: `dotnet add package Microsoft.Azure.Graphs -v 0.3.1-preview dotnet add package FSharp.Control.AsyncSeq -v 2.0.21 dotnet add package Microsoft.Extensions.Configuration.Json -v 2.0.1 dotnet add package FSharp.Core -v 4.3.4`
+Add the latest version of each using the NuGet GUI of Visual Studio, or if you prefer command lines:
+```
+dotnet add package Microsoft.Azure.Graphs -v 0.3.1-preview
+dotnet add package FSharp.Control.AsyncSeq -v 2.0.21
+dotnet add package Microsoft.Extensions.Configuration.Json -v 2.0.1
+dotnet add package FSharp.Core -v 4.3.4
+```
 
 Now we can start writing code in the `Program.fs` file.
 
@@ -65,35 +83,85 @@ Now we can start writing code in the `Program.fs` file.
 
 The key class in the Azure Cosmos DB SDK is `DocumentClient`, so let's make a function to instantiate it. The constructor takes our previously defined `Endpoint` and `AuthKey`.
 
-\[sourcecode language="fsharp"\] let createClient endpoint (authKey: string) = new DocumentClient( new Uri(endpoint), authKey, ConnectionPolicy.Default ) \[/sourcecode\]
+```fsharp
+let createClient endpoint (authKey: string) =
+    new DocumentClient(
+        new Uri(endpoint),
+        authKey,
+        ConnectionPolicy.Default
+    )
+```
 
 Next, as we didn't created the database and graph manually, we need to ensure that the database is properly created before querying the graph. Lucky for us, `DocumentClient` has a `CreateDatabaseIfNotExistsAsync` method that takes only our configured `DatabaseName`. Note that the code below doesn't return the database. That's because the database instance is not required to run queries.
 
-\[sourcecode language="fsharp"\] let createDatabaseAsync databaseName (client: DocumentClient) = new Database (Id = databaseName) |> client.CreateDatabaseIfNotExistsAsync |> Async.AwaitTask |> Async.Ignore \[/sourcecode\]
+```fsharp
+let createDatabaseAsync databaseName (client: DocumentClient) =
+    new Database (Id = databaseName)
+    |> client.CreateDatabaseIfNotExistsAsync
+    |> Async.AwaitTask
+    |> Async.Ignore
+```
 
 Same goes for the graph (using `CreateDocumentCollectionIfNotExistsAsync`). Except this time, we need to return the graph's instance to be able to run queries afterwards.
 
 We provide our `DatabaseName`, `GraphName`, and `OfferThroughput`.
 
-\[sourcecode language="fsharp"\] let createGraphAsync databaseName graphName offerThroughput (client: DocumentClient) = let throughput = Nullable<int>(offerThroughput)
-
-client.CreateDocumentCollectionIfNotExistsAsync( UriFactory.CreateDatabaseUri(databaseName), new DocumentCollection (Id = graphName), new RequestOptions (OfferThroughput = throughput) ) |> Async.AwaitTask |> (fun asyncResult -> async { let! result = asyncResult return result.Resource }) \[/sourcecode\]
+```fsharp
+let createGraphAsync databaseName graphName offerThroughput (client: DocumentClient) =
+    let throughput = Nullable<int>(offerThroughput)
+    
+    client.CreateDocumentCollectionIfNotExistsAsync(
+        UriFactory.CreateDatabaseUri(databaseName),
+        new DocumentCollection (Id = graphName),
+        new RequestOptions (OfferThroughput = throughput)
+    )
+    |> Async.AwaitTask
+    |> (fun asyncResult -> async { let! result = asyncResult return result.Resource })
+```
 
 And now for the crucial part, running queries. Queries are made by calling `client.CreateGremlinQuery` with the previously created client, graph and the actual Gremlin request (as a string). This returns a Reader that exposes `ExecuteNextAsync` to get the next page of results. To ease its usage, the call to `ExecuteNextAsync` is wrapped into an asynchronous sequence. So enumerating that sequence will give all the query's results, in an asynchronous manner.
 
 Note that `ExecuteNextAsync` is generic. Behind the scene, every results retrieved from Azure Cosmos DB (sent as a JSON payload, known as [GraphSON](http://tinkerpop.apache.org/docs/current/reference/#graphson-reader-writer)) will be converted to the given type via Newtonsoft.Json. The SDK already has some predefined types for that task, such as [Vertex and Edge](https://docs.microsoft.com/en-us/dotnet/api/microsoft.azure.graphs.elements).
 
-\[sourcecode language="fsharp"\] let runGremlinQuery<'T> (dq: IDocumentQuery<'T>) = asyncSeq { while (dq.HasMoreResults) do let! items = dq.ExecuteNextAsync<'T>() |> Async.AwaitTask for item in items do yield item }
+```fsharp
+let runGremlinQuery<'T> (dq: IDocumentQuery<'T>) =
+    asyncSeq {
+        while (dq.HasMoreResults) do
+            let! items = dq.ExecuteNextAsync<'T>()
+                         |> Async.AwaitTask
+            
+            for item in items do
+                yield item
+    }
 
-let runQueryWithClient<'T> (client: DocumentClient) graph query = client.CreateGremlinQuery<'T>(graph, query) |> runGremlinQuery<'T> \[/sourcecode\]
+let runQueryWithClient<'T> (client: DocumentClient) graph query =
+    client.CreateGremlinQuery<'T>(graph, query)
+    |> runGremlinQuery<'T>
+```
 
 Last step, read our settings file using Microsoft.Extensions.Configuration.Json.
 
-\[sourcecode language="fsharp"\] type AzureCosmosDbConfiguration = { Endpoint: string AuthKey: string DatabaseName: string GraphName: string OfferThroughput: int }
+```fsharp
+type AzureCosmosDbConfiguration =
+    { Endpoint: string
+      AuthKey: string
+      DatabaseName: string
+      GraphName: string
+      OfferThroughput: int }
 
-let getConfiguration() = let configurationBuilder = new ConfigurationBuilder() configurationBuilder .SetBasePath(Directory.GetCurrentDirectory()) .AddJsonFile("appsettings.json") .Build()
+let getConfiguration() =
+    ConfigurationBuilder()
+        .SetBasePath(Directory.GetCurrentDirectory())
+        .AddJsonFile("appsettings.json")
+        .Build()
 
-let readAzureCosmosDbConfiguration (configuration: IConfigurationRoot) = { Endpoint = configuration.\["AzureCosmosDb:Endpoint"\] AuthKey = configuration.\["AzureCosmosDb:AuthKey"\] DatabaseName = configuration.\["AzureCosmosDb:DatabaseName"\] GraphName = configuration.\["AzureCosmosDb:GraphName"\] OfferThroughput = (configuration .\["AzureCosmosDb:OfferThroughput"\] |> int) } \[/sourcecode\]
+let readAzureCosmosDbConfiguration (configuration: IConfigurationRoot) =
+    { Endpoint = configuration.["AzureCosmosDb:Endpoint"]
+      AuthKey = configuration.["AzureCosmosDb:AuthKey"]
+      DatabaseName = configuration.["AzureCosmosDb:DatabaseName"]
+      GraphName = configuration.["AzureCosmosDb:GraphName"]
+      OfferThroughput = (configuration.["AzureCosmosDb:OfferThroughput"] |> int) }
+```
 
 We have all our tooling ready, now we can move on and actually run the sample.
 
@@ -101,24 +169,52 @@ We have all our tooling ready, now we can move on and actually run the sample.
 
 First step is to initialize our environment.
 
-\[sourcecode language="fsharp"\] // Get the configuration let configuration = getConfiguration() |> readAzureCosmosDbConfiguration
+```fsharp
+// Get the configuration
+let configuration = getConfiguration() |> readAzureCosmosDbConfiguration
 
-// Create the client let client = createClient configuration.Endpoint configuration.AuthKey
+// Create the client
+let client = createClient configuration.Endpoint configuration.AuthKey
 
-// Ensure that the database is created do! createDatabaseAsync configuration.DatabaseName client
+// Ensure that the database is created
+do! createDatabaseAsync configuration.DatabaseName client
 
-// Ensure that the graph is created // and store its instance let! graph = createGraphAsync configuration.DatabaseName configuration.GraphName configuration.OfferThroughput client \[/sourcecode\]
+// Ensure that the graph is created
+// and store its instance
+let! graph =
+    createGraphAsync
+        configuration.DatabaseName
+        configuration.GraphName
+        configuration.OfferThroughput
+        client
+```
 
 To have a code easier to read, I partially applied the call to `runQueryWithClient` to always use the same client and graph.
 
-\[sourcecode language="fsharp"\] // Prepare a query runner that won't // return results let executeQuery = runQueryWithClient<obj> client graph >> AsyncSeq.iter ignore
+```fsharp
+// Prepare a query runner that won't
+// return results
+let executeQuery = runQueryWithClient<obj> client graph >> AsyncSeq.iter ignore
 
-// Prepare a query runner that will // return a list of vertices let getVertices = runQueryWithClient<Vertex> client graph >> AsyncSeq.toListAsync
+// Prepare a query runner that will
+// return a list of vertices
+let getVertices = runQueryWithClient<Vertex> client graph >> AsyncSeq.toListAsync
 
-// Prepare a query runner that will // return a single vertex let getSingleVertex = getVertices >> List.head \[/sourcecode\]
+// Prepare a query runner that will
+// return a single vertex
+let getSingleVertex = getVertices >> List.head
+```
 
 Now we're all done, and can start running our queries.
 
-\[sourcecode language="fsharp"\] // Add data do! executeQuery "g.addV('person') .property('id', 'thomas') .property('firstName', 'Thomas') .property('age', 44)"
+```fsharp
+// Add data
+do! executeQuery
+    "g.addV('person')
+      .property('id', 'thomas')
+      .property('firstName', 'Thomas')
+      .property('age', 44)"
 
-// Retrieve data let! thomas = getSingleVertex "g.V('thomas')" \[/sourcecode\]
+// Retrieve data
+let! thomas = getSingleVertex "g.V('thomas')"
+```
