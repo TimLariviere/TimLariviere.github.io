@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "One Mac. Small Xamarin team. How to. Part 2"
-date: "2017-03-14"
+date: "2017-03-15"
 ---
 
 Welcome in this long awaited part 2 of the serie "One Mac. Small Xamarin team. How to.".

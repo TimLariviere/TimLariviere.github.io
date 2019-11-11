@@ -1,7 +1,7 @@
 ---
 layout: post
 title: ".NET Core – Hide file / folder from project in Visual Studio 2015"
-date: "2017-01-17"
+date: "2017-01-18"
 ---
 
 A few warnings before we begin :

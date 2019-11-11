@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Call an Azure AD protected API in Xamarin/UWP apps"
-date: "2017-02-12"
+date: "2017-02-13"
 ---
 
 When we talk about mobile apps, a web API is generally hiding in the background, doing most of the work like connecting to a database, verifying authorization, computing data, and so on. Like everything else, those APIs need protection against unauthorized calls that don't come from our mobile apps.

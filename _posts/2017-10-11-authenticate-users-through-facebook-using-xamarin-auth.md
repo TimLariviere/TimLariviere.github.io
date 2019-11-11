@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Authenticate users through Facebook using Xamarin.Auth"
-date: "2017-10-10"
+date: "2017-10-11"
 ---
 
 Following the previous post on Google authentication, I will now focus on how to authenticate on Facebook with Xamarin.Auth and retrieve the user's email address. In case you missed the Google post, you can read all about it here: [Authenticate users through Google with Xamarin.Auth](http://timothelariviere.com/2017/09/01/authenticate-users-through-google-with-xamarin-auth/)
