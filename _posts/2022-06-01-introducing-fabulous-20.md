@@ -125,14 +125,14 @@ _Comparison of dll sizes for FabulousContacts between Fabulous 1.0 and 2.0 (iOS 
 More than 80% reduction in dll size overall for Fabulous 2.0, leading to 13% size reduction for the FabulousContacts app itself!  
 This is a huge improvement over 1.0.
 
-\* Please note that for some dlls, the F# optimization and signature data can make for a big chunk of the dll size (2/3 in case of F.XF.dll, about ~0.7 MB).  
+<sub>\* Please note that for some dlls, the F# optimization and signature data can make for a big chunk of the dll size (2/3 in case of F.XF.dll, about ~0.7 MB).  
 Those data are not used at runtime but the Xamarin linker doesn't remove them.  
-After we start support for MAUI, the dll sizes will be much smaller thanks to the .NET 6.0 linker removing those unused data.
+After we start support for MAUI, the dll sizes will be much smaller thanks to the .NET 6.0 linker removing those unused data.</sub>
 
-\** Fabulous.XamarinForms.Maps is not available yet for Fabulous 2.0.  
-Instead the Map widget has been directly integrated into FabulousContacts.
+<sub>\** Fabulous.XamarinForms.Maps is not available yet for Fabulous 2.0.  
+Instead the Map widget has been directly integrated into FabulousContacts.</sub>
 
-\*** Decompressed IPA files
+<sub>\*** Decompressed IPA files</sub>
 
 ### Better 3rd party support and extensibility
 
@@ -197,10 +197,10 @@ Fabulous will take care of the rest.
 
 Along with this new release, we also launched a new website dedicated to Fabulous.
 
-https://fabulous.dev
+[https://fabulous.dev](https://fabulous.dev)
 
 It's a great place to learn more about Fabulous, and to see how it's used in the wild.  
-Documentation is available at https://docs.fabulous.dev
+Documentation is available at [https://docs.fabulous.dev](https://docs.fabulous.dev)
 
 Right now, the website is in a very early stage, but we're working hard to make it as useful as possible.  
 We are currently focusing on adding more documentation for 2.0.
@@ -212,7 +212,7 @@ If you're interested in contributing to the website, please contact us on the Fa
 
 You can start right now by installing the [templates](https://www.nuget.org/packages/Fabulous.XamarinForms.Templates) available on NuGet!
 
-Follow the Getting Started guide to learn start to use Fabulous 2.0: https://docs.fabulous.dev/v2/getting-started
+Follow the Getting Started guide to learn start to use Fabulous 2.0: [https://docs.fabulous.dev/v2/getting-started](https://docs.fabulous.dev/v2/getting-started)
 
-If you have any questions, feel free to ask them on the [Discord channel](https://discord.gg/bpTJMbSSYK) or raise issues on GitHub: https://github.com/fsprojects/Fabulous  
+If you have any questions, feel free to ask them on the [Discord channel](https://discord.gg/bpTJMbSSYK) or raise issues on GitHub: [https://github.com/fsprojects/Fabulous](https://github.com/fsprojects/Fabulous)  
 We are also available on Twitter [@FabulousAppDev](https://twitter.com/FabulousAppDev).
