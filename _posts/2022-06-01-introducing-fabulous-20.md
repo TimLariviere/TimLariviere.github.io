@@ -4,8 +4,6 @@ title: "Introducing Fabulous 2.0"
 date: "2022-06-01"
 ---
 
-# Introducing Fabulous 2.0
-
 Almost a year of hard work, I am very excited to announce [Fabulous 2.0](https://github.com/fsprojects/Fabulous)!  
 This new release is a complete rewrite of Fabulous, focusing on performance and developer experience.
 
